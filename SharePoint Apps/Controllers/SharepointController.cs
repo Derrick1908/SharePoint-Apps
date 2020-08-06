@@ -24,12 +24,23 @@ namespace SharePoint_Apps.Controllers
 
         [System.Web.Http.Route("api/CreateFolder")]
         [HttpPost]
-        public async Task<SharePointResponse> CreateFolder(FolderModel folder)
+        public async Task<object> CreateFolder(FolderModel folder)
         {
-            SharePointResponse sharePointToken = await GetSharepointToken();
-            RequestModel requestModel = createRequests.CreateSharePointFolderValues(folder);
-            requestModel.token = sharePointToken.access_token;
-            return await createRequests.POSTAsync(requestModel);
+            var configuration = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.SetConfiguration(configuration);
+            try
+            {
+                SharePointResponse sharePointToken = await GetSharepointToken();
+                RequestModel requestModel = createRequests.CreateSharePointFolderValues(folder);
+                requestModel.token = sharePointToken.access_token;
+                await createRequests.POSTAsync(requestModel);
+                return request.CreateResponse(HttpStatusCode.OK, "Successfully Created Folder");
+            }
+            catch(Exception)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
         }
 
     }

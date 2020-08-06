@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Configuration;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -85,9 +87,11 @@ namespace SharePoint_Apps.Providers
                 if (credentials.body != null)
                 {
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
-                    MediaTypeWithQualityHeaderValue acceptHeader = MediaTypeWithQualityHeaderValue.Parse("application/json;odata=verbose");
+                    MediaTypeWithQualityHeaderValue acceptHeader = MediaTypeWithQualityHeaderValue.Parse("application/json;odata=verbose;charset=utf-8");
                     client.DefaultRequestHeaders.Accept.Add(acceptHeader);
                     content = new StringContent(credentials.body);
+                    content.Headers.ContentType = acceptHeader;
+                    //content = new StringContent(credentials.body,Encoding.UTF8, "application/json;odata=verbose");
                 }
                 else
                 {
@@ -106,6 +110,27 @@ namespace SharePoint_Apps.Providers
             var result = await client.GetAsync(credentials.URL);
             string resultContent = await result.Content.ReadAsStringAsync();
             return resultContent;
+        }
+
+        public string POSTSAsync(RequestModel credentials)
+        {
+            var request = (HttpWebRequest)WebRequest.Create(credentials.URL);
+            var postData = credentials.body;
+            var data = Encoding.ASCII.GetBytes(postData);
+
+            request.Method = "POST";
+            request.ContentType = "application/json;odata=verbose";
+            request.Accept = "application/json;odata=verbose";
+            request.ContentLength = data.Length;
+
+            using (var stream = request.GetRequestStream())
+            {
+                stream.Write(data, 0, data.Length);
+            }
+
+            var response = (HttpWebResponse)request.GetResponse();
+            var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+            return responseString;
         }
     }
 }
