@@ -75,7 +75,6 @@ namespace SharePoint_Apps.Providers
                 var subURL_2 = ConfigurationManager.AppSettings["Sub Part 2 URL"].ToString();
                 var folder = ConfigurationManager.AppSettings["Folder Directory URL"].ToString();
 
-
                 string folderURL = parentURL + subURL_1 + subURL_2 + "folders";
                 string myJson = "{'__metadata': {'type': 'SP.Folder'},'ServerRelativeUrl': '" + subURL_1 + folder + folders.FolderName + "'}";
 
@@ -127,6 +126,27 @@ namespace SharePoint_Apps.Providers
             }
         }
 
+        /// <summary>
+        /// Description : This method creates the URL for the POST Request that will hit the
+        ///               SharePoint API inorder to Upload a File to a particular Folder with the Supplied Name in the Shared Documents Folder.
+        ///               along with the needed details.
+        /// </summary>
+        /// <returns> The URL for the POST Request with the needed values</returns>
+        public RequestModel UploadFileSharePointValues(FolderModel folders)
+        {
+            try
+            {
+               RequestModel requestModel = DeleteSharePointFolderValues(folders);
+               var fileURL = ConfigurationManager.AppSettings["File Relative URL"].ToString();
+               requestModel.URL += string.Format(fileURL,folders.fileName);   
+               requestModel.type = 5;
+               return requestModel;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
 
         /// <summary>
         /// Description : This method creates the URL for the POST Request that will hit the
@@ -140,7 +160,6 @@ namespace SharePoint_Apps.Providers
                 var parentURL = ConfigurationManager.AppSettings["Parent SharePoint URL"].ToString();
                 var subURL_1 = ConfigurationManager.AppSettings["Sub Part 1 URL"].ToString();
                 var FormDigest_subURL_2 = ConfigurationManager.AppSettings["Form Digest Part 2 URL"].ToString();
-
 
                 string formDigestURL = parentURL + subURL_1 + FormDigest_subURL_2;
                 RequestModel requestModel = new RequestModel
@@ -202,7 +221,7 @@ namespace SharePoint_Apps.Providers
                     SharePointResponse tokenResponse = JsonConvert.DeserializeObject<SharePointResponse>(resultContent);
                     return tokenResponse;
                 }
-                else         //Type 4 indicates that the POST Request will be for Deleting a Folder on Shared Documents
+                else if (credentials.type == 4)        //Type 4 indicates that the POST Request will be for Deleting a Folder on Shared Documents
                 {
                     //This Section Creates a POST Request for Deleting a Folder
 
@@ -212,16 +231,27 @@ namespace SharePoint_Apps.Providers
                     content = null;
                     var result = await client.PostAsync(credentials.URL, content);
                     return result;
-                }                
+                }
+                else
+                {
+                    //This Section Creates a POST Request for Uploading a File to a Particular FOdler
+                    MultipartFormDataContent form = new MultipartFormDataContent();
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    client.DefaultRequestHeaders.Add("X-RequestDigest", credentials.formDigestValue);
+                    form.Add(credentials.httpPostedFile);
+                    var result = await client.PostAsync(credentials.URL, form);
+                    return result;
+                }
             }
         }
         public async Task<object> GETAsync(RequestModel credentials)
         {
-
-            var client = new HttpClient();            
-            var result = await client.GetAsync(credentials.URL);
-            string resultContent = await result.Content.ReadAsStringAsync();
-            return resultContent;
+            using (HttpClient client = new HttpClient())
+            {
+                var result = await client.GetAsync(credentials.URL);
+                string resultContent = await result.Content.ReadAsStringAsync();
+                return resultContent;
+            }
         }
     }
 }

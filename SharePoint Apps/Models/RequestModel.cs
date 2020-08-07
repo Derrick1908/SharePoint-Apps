@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Web;
 
 namespace SharePoint_Apps.Models
@@ -18,5 +19,6 @@ namespace SharePoint_Apps.Models
         public string token { get; set; }
         public string formDigestValue { get; set; }
         public int type { get; set; }
+        public ByteArrayContent httpPostedFile { get; set; }
     }
 }

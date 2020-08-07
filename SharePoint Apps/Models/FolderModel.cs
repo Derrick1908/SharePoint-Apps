@@ -14,5 +14,6 @@ namespace SharePoint_Apps.Models
         /// </summary>
         public string FolderName { get; set; }
         public List<string> SubFolders { get; set; }
+        public string fileName { get; set; }
     }
 }
