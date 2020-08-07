@@ -47,7 +47,7 @@ namespace SharePoint_Apps.Controllers
                 RequestModel requestModel = createRequests.CreateSharePointFolderValues(folder);
                 requestModel.token = sharePointToken.access_token;
                 await createRequests.POSTAsync(requestModel);
-                return request.CreateResponse(HttpStatusCode.OK, "Successfully Created Folder");
+                return request.CreateResponse(HttpStatusCode.OK, "Successfully Created Folder " + folder.FolderName);
             }
             catch(Exception)
             {
@@ -55,9 +55,40 @@ namespace SharePoint_Apps.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Description : POST Request to Delete a Particular Folder in SharePoint API
+        ///               with the required folder name along with token and digest value that it
+        ///               retrieves by internally calling the Get Form Digest Method.
+        /// </summary>
+        /// <returns>Form Digest Value</returns>
+        [System.Web.Http.Route("api/DeleteFolder")]
+        [HttpPost]
+        public async Task<object> DeleteFolder(FolderModel folder)
+        {
+            var configuration = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.SetConfiguration(configuration);
+            try
+            {
+                SharePointResponse sharePointToken = await GetFormDigest();
+                RequestModel requestModel = createRequests.DeleteSharePointFolderValues(folder);
+                requestModel.token = sharePointToken.access_token;
+                requestModel.formDigestValue = sharePointToken.formDigestValue;
+                await createRequests.POSTAsync(requestModel);
+                return request.CreateResponse(HttpStatusCode.OK, "Successfully Deleted Folder " + folder.FolderName);
+            }
+            catch (Exception)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+        }
+
+
         /// <summary>
         /// Description : Gets the Form Digest Value using a Valid Token supplied along 
-        ///               with the Request
+        ///               with the Request which is retrieved by calling the GetToken Method
+        ///               internally
         /// </summary>
         /// <returns>Form Digest Value</returns>
         [System.Web.Http.Route("api/GetFormDigest")]
@@ -88,10 +119,11 @@ namespace SharePoint_Apps.Controllers
                 }
                 return sharePointToken;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
         }
+
     }
 }

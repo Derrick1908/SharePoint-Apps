@@ -16,6 +16,7 @@ namespace SharePoint_Apps.Models
         public Dictionary<string,string> Values { get; set; }
         public string body { get; set; }
         public string token { get; set; }
+        public string formDigestValue { get; set; }
         public int type { get; set; }
     }
 }

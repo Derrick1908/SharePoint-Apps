@@ -96,6 +96,40 @@ namespace SharePoint_Apps.Providers
 
         /// <summary>
         /// Description : This method creates the URL for the POST Request that will hit the
+        ///               SharePoint API inorder to Delete a Folder with the Supplied Name in the Shared Documents Folder.
+        ///               along with the needed details.
+        /// </summary>
+        /// <returns> The URL for the POST Request with the needed values</returns>
+        public RequestModel DeleteSharePointFolderValues(FolderModel folders)
+        {
+            try
+            {
+                var parentURL = ConfigurationManager.AppSettings["Parent SharePoint URL"].ToString();
+                var subURL_1 = ConfigurationManager.AppSettings["Sub Part 1 URL"].ToString();
+                var subURL_2 = ConfigurationManager.AppSettings["Sub Part 2 URL"].ToString();
+                var subfolder = ConfigurationManager.AppSettings["Folder Directory URL"].ToString();
+                var folderURL = ConfigurationManager.AppSettings["Folder Relative URL"].ToString();
+
+                string folderRelativeURL = string.Format(folderURL,subURL_1 + subfolder + folders.FolderName);
+                string folderDeleteURL = parentURL + subURL_1 + subURL_2 + folderRelativeURL;
+
+                RequestModel requestModel = new RequestModel
+                {
+                    URL = folderDeleteURL,
+                    type = 4
+                };
+
+                return requestModel;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+
+        /// <summary>
+        /// Description : This method creates the URL for the POST Request that will hit the
         ///               SharePoint API inorder to get the Form Digest Value.
         /// </summary>
         /// <returns> The URL for the POST Request </returns>
@@ -136,7 +170,7 @@ namespace SharePoint_Apps.Providers
                 HttpContent content;
                 if (credentials.body != null && credentials.type == 1) //Type 1 indicates that the POST Request will be for Uploading a Folder
                 {
-                    //This Section Creates a POST Request for Creating a Folder
+                    //This Section Creates a POST Request for Creating a Folder on Shared Documents
 
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
                     MediaTypeWithQualityHeaderValue acceptHeader = MediaTypeWithQualityHeaderValue.Parse("application/json;odata=verbose;charset=utf-8");
@@ -158,7 +192,7 @@ namespace SharePoint_Apps.Providers
                     string resultContent = await result.Content.ReadAsStringAsync();                    
                     return resultContent;
                 }
-                else            //Type 3 indicates that the POST Request will be for Getting the Token
+                else if(credentials.type == 3)  //Type 3 indicates that the POST Request will be for Getting the Token
                 {
                     //This Section Creates a POST Request for Retrieving a Token
 
@@ -167,7 +201,18 @@ namespace SharePoint_Apps.Providers
                     string resultContent = await result.Content.ReadAsStringAsync();
                     SharePointResponse tokenResponse = JsonConvert.DeserializeObject<SharePointResponse>(resultContent);
                     return tokenResponse;
-                }                               
+                }
+                else         //Type 4 indicates that the POST Request will be for Deleting a Folder on Shared Documents
+                {
+                    //This Section Creates a POST Request for Deleting a Folder
+
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    client.DefaultRequestHeaders.Add("X-RequestDigest", credentials.formDigestValue);
+                    client.DefaultRequestHeaders.Add("X-HTTP-Method", "DELETE");
+                    content = null;
+                    var result = await client.PostAsync(credentials.URL, content);
+                    return result;
+                }                
             }
         }
         public async Task<object> GETAsync(RequestModel credentials)
