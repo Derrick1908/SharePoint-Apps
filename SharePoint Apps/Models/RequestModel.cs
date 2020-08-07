@@ -20,5 +20,6 @@ namespace SharePoint_Apps.Models
         public string formDigestValue { get; set; }
         public int type { get; set; }
         public ByteArrayContent httpPostedFile { get; set; }
+        public string URL2 { get; set; }     //Used only when retrieving Folder Contents. Otherwise rarely used.
     }
 }

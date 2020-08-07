@@ -118,6 +118,73 @@ namespace SharePoint_Apps.Controllers
         }
 
         /// <summary>
+        /// Description : POST Request to Check whether a Particular Folder in SharePoint API
+        ///               with the given folder name is empty or not along with token and digest value that it
+        ///               retrieves by internally calling the Get Form Digest Method.
+        /// </summary>
+        /// <returns>Whether the Folder is Empty or not.</returns>
+        [System.Web.Http.Route("api/EmptyFolder")]
+        [HttpGet]
+        public async Task<object> EmptyFolder(FolderModel folder)
+        {
+            var configuration = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.SetConfiguration(configuration);
+            try
+            {
+                SharePointResponse sharePointToken = await GetSharepointToken();
+                if (sharePointToken != null)
+                {
+                    RequestModel requestModel = createRequests.GetFolderContentSharePointValues(folder);
+                    if (requestModel != null)
+                    {
+                        folder.fileCount = folder.folderCount = 0;
+                        requestModel.token = sharePointToken.access_token;
+                        string responses = (string) await createRequests.GETAsync(requestModel);
+                        string[] response = responses.Split('@');
+                        string[] fileResult = response[0].Split('\"');
+                        string[] folderResult = response[1].Split('\"');
+                        for (var i = 0; i < fileResult.Length; i++)
+                        {
+                            if (fileResult[i].Contains("metadata"))
+                                folder.fileCount++;
+                            if (fileResult[i].Contains("ServerRelativeUrl"))
+                            {
+                                ++i;
+                                string[] temp = fileResult[i].Split('/');
+                                folder.files.Add(temp[temp.Length - 1]);
+                            }
+                        }
+                        for (var i = 0; i < folderResult.Length; i++)
+                        {
+                            if (folderResult[i].Contains("metadata"))
+                                folder.folderCount++;
+                            if (folderResult[i].Contains("ServerRelativeUrl"))
+                            {
+                                ++i;
+                                string[] temp = folderResult[i].Split('/');
+                                folder.SubFolders.Add(temp[temp.Length - 1]);
+                            }
+                        }
+
+                        if(folder.fileCount < 0 && folder.folderCount < 0)
+                            return request.CreateResponse(HttpStatusCode.OK, "Folder " + folder.FolderName + " is Empty");
+                        else
+                            return request.CreateResponse(HttpStatusCode.OK, "Folder " + folder.FolderName + " is not Empty");
+                    }
+                    else
+                        throw new Exception();
+                }
+                else
+                    throw new Exception();
+            }
+            catch (Exception)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+        }
+
+        /// <summary>
         /// Description : POST Request to Upload a Particular File to a particular Folder in SharePoint API
         ///               that is sent along with token and digest value that it retrieves by internally calling the Get Form Digest Method.
         /// </summary>
@@ -169,7 +236,7 @@ namespace SharePoint_Apps.Controllers
                 else
                     throw new Exception();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }

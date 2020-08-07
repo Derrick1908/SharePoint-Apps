@@ -149,6 +149,27 @@ namespace SharePoint_Apps.Providers
         }
 
         /// <summary>
+        /// Description : This method creates the URL for the GET Request that will hit the
+        ///               SharePoint API inorder to List a Folder (name supplied) Contents in the Shared Documents Folder.        
+        /// </summary>
+        /// <returns> The URL for the GET Request with the needed values</returns>
+        public RequestModel GetFolderContentSharePointValues(FolderModel folders)
+        {
+            try
+            {
+                RequestModel requestModel = DeleteSharePointFolderValues(folders);
+                requestModel.URL += "/Files";
+                requestModel.URL2 = requestModel.URL + "/Folders";
+                requestModel.type = 6;
+                return requestModel;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Description : This method creates the URL for the POST Request that will hit the
         ///               SharePoint API inorder to get the Form Digest Value.
         /// </summary>
@@ -234,7 +255,7 @@ namespace SharePoint_Apps.Providers
                 }
                 else
                 {
-                    //This Section Creates a POST Request for Uploading a File to a Particular FOdler
+                    //This Section Creates a POST Request for Uploading a File to a Particular Folder
                     MultipartFormDataContent form = new MultipartFormDataContent();
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
                     client.DefaultRequestHeaders.Add("X-RequestDigest", credentials.formDigestValue);
@@ -248,9 +269,28 @@ namespace SharePoint_Apps.Providers
         {
             using (HttpClient client = new HttpClient())
             {
-                var result = await client.GetAsync(credentials.URL);
-                string resultContent = await result.Content.ReadAsStringAsync();
-                return resultContent;
+                if (credentials.type == 6)
+                {
+                    //This Section Creates a GET Request for Retrieving the Contents of a Particular Folder
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    MediaTypeWithQualityHeaderValue acceptHeader = MediaTypeWithQualityHeaderValue.Parse("application/json;odata=verbose");
+                    client.DefaultRequestHeaders.Accept.Add(acceptHeader);
+                    var result = await client.GetAsync(credentials.URL);    //Files Result
+                    
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    client.DefaultRequestHeaders.Accept.Add(acceptHeader);
+                    var result2 = await client.GetAsync(credentials.URL2);  //Folders Result
+                    
+                    string resultContent = await result.Content.ReadAsStringAsync();
+                    string resultContent2 = await result2.Content.ReadAsStringAsync();
+                    return resultContent + "@" + resultContent2;  //Acts as a separator between both the Results
+                }
+                else
+                {
+                    var result = await client.GetAsync(credentials.URL);
+                    string resultContent = await result.Content.ReadAsStringAsync();
+                    return resultContent;
+                }
             }
         }
     }
