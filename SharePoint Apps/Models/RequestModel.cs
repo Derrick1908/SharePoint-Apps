@@ -16,6 +16,7 @@ namespace SharePoint_Apps.Models
         public string URL { get; set; }
         public Dictionary<string,string> Values { get; set; }
         public string body { get; set; }
+        public List<string> body_2 { get; set; } //List of Bodies used only when creating subfolders. Otherwise rarely Used.
         public string token { get; set; }
         public string formDigestValue { get; set; }
         public int type { get; set; }

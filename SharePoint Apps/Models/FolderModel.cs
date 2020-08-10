@@ -19,5 +19,6 @@ namespace SharePoint_Apps.Models
         public List<string> files { get; set; }
         public int fileCount { get; set; }
         public int folderCount { get; set; }
+        public int type { get; set; }     //Whether its a Client or Vendor or User
     }
 }

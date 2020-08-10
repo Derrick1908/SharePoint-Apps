@@ -12,6 +12,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Compilation;
 
 namespace SharePoint_Apps.Providers
 {
@@ -65,6 +66,7 @@ namespace SharePoint_Apps.Providers
         ///               SharePoint API inorder to create a Folder with the Supplied Name in the Shared Documents Folder.
         ///               along with the needed Body Content in the form of application/json;odata=verbose
         /// </summary>
+        /// TO DO: To update Sub Folder Names later based on what is finally needed.
         /// <returns> The URL for the POST Request and the needed body values</returns>
         public RequestModel CreateSharePointFolderValues(FolderModel folders)
         {
@@ -78,10 +80,29 @@ namespace SharePoint_Apps.Providers
                 string folderURL = parentURL + subURL_1 + subURL_2 + "folders";
                 string myJson = "{'__metadata': {'type': 'SP.Folder'},'ServerRelativeUrl': '" + subURL_1 + folder + folders.FolderName + "'}";
 
+                folders.SubFolders = new List<string>();
+                if (folders.type == 1)   //Type 1 indicates Clients
+                {
+                    folders.SubFolders.Add("FF&E");
+                    folders.SubFolders.Add("OS&E");
+                    folders.SubFolders.Add("Logos");
+                    folders.SubFolders.Add("Profile Pics");
+                }
+                else          //Type 2 Indicates Vendors (Temp. To be Updated)
+                {
+                    folders.SubFolders.Add("FF&E");
+
+                }
+                List<string> myJson_2 = new List<string>();
+                for(int i=0; i<folders.SubFolders.Count;i++)
+                {
+                    myJson_2.Add("{'__metadata': {'type': 'SP.Folder'},'ServerRelativeUrl': '" + subURL_1 + folder + folders.FolderName + "/" + folders.SubFolders[i] + "'}");
+                }
                 RequestModel requestModel = new RequestModel
                 {
                     URL = folderURL,
                     body = myJson,
+                    body_2 = myJson_2,
                     type = 1
                 };
 
@@ -208,7 +229,7 @@ namespace SharePoint_Apps.Providers
             using (HttpClient client = new HttpClient())
             {
                 HttpContent content;
-                if (credentials.body != null && credentials.type == 1) //Type 1 indicates that the POST Request will be for Uploading a Folder
+                if (credentials.body != null && credentials.type == 1) //Type 1 indicates that the POST Request will be for Creating a Folder
                 {
                     //This Section Creates a POST Request for Creating a Folder on Shared Documents
 
@@ -218,6 +239,15 @@ namespace SharePoint_Apps.Providers
                     content = new StringContent(credentials.body);
                     content.Headers.ContentType = acceptHeader;                    
                     var result = await client.PostAsync(credentials.URL, content);
+                    if(credentials.body_2!=null)
+                    {
+                        for(var i=0;i<credentials.body_2.Count;i++)
+                        {
+                            content = new StringContent(credentials.body_2[i]);
+                            content.Headers.ContentType = acceptHeader;
+                            await client.PostAsync(credentials.URL, content);
+                        }
+                    }
                     return result;
                 }
                 else if(credentials.type == 2)  //Type 2 indicates that the POST Request will be for Form Digest Value
@@ -265,6 +295,13 @@ namespace SharePoint_Apps.Providers
                 }
             }
         }
+
+        /// <summary>
+        /// Description : A Commmon Method that creates GET Requests based on Different
+        ///               Need that will be called with the appropriate details
+        /// </summary>
+        /// <param name="credentials"></param>
+        /// <returns>The appropriate result which could range from getting folder contents or checking if folder is empty</returns>
         public async Task<object> GETAsync(RequestModel credentials)
         {
             using (HttpClient client = new HttpClient())
@@ -276,9 +313,6 @@ namespace SharePoint_Apps.Providers
                     MediaTypeWithQualityHeaderValue acceptHeader = MediaTypeWithQualityHeaderValue.Parse("application/json;odata=verbose");
                     client.DefaultRequestHeaders.Accept.Add(acceptHeader);
                     var result = await client.GetAsync(credentials.URL);    //Files Result
-                    
-                    //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
-                    //client.DefaultRequestHeaders.Accept.Add(acceptHeader);
                     var result2 = await client.GetAsync(credentials.URL2);  //Folders Result
                     
                     string resultContent = await result.Content.ReadAsStringAsync();

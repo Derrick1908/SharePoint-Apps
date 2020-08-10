@@ -61,7 +61,6 @@ namespace SharePoint_Apps.Controllers
                     RequestModel requestModel = createRequests.CreateSharePointFolderValues(folder);
                     if (requestModel != null)
                     {
-
                         requestModel.token = sharePointToken.access_token;
                         await createRequests.POSTAsync(requestModel);
                         return request.CreateResponse(HttpStatusCode.OK, "Successfully Created Folder " + folder.FolderName);
@@ -180,7 +179,7 @@ namespace SharePoint_Apps.Controllers
                 else
                     throw new Exception();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
