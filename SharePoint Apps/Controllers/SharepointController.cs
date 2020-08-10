@@ -244,6 +244,45 @@ namespace SharePoint_Apps.Controllers
         }
 
 
+        /// <summary>        
+        /// Description : POST Request to Delete a Particular File in SharePoint API
+        ///               with the required folder name along with token and digest value that it
+        ///               retrieves by internally calling the Get Form Digest Method.
+        /// </summary>
+        /// <param name="folder">Needs 2 parameters namely 1) The Folder Name and 2) File Name </param>
+        /// <returns>Whether the File is deleted successfully or not.</returns>
+        [System.Web.Http.Route("api/DeleteFile")]
+        [HttpPost]
+        public async Task<object> DeleteFile(FolderModel folder)
+        {
+            var configuration = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.SetConfiguration(configuration);
+            try
+            {
+                SharePointResponse sharePointToken = await GetFormDigest();
+                if (sharePointToken != null)
+                {
+                    RequestModel requestModel = createRequests.DeleteFileSharePointValues(folder);
+                    if (requestModel != null)
+                    {
+                        requestModel.token = sharePointToken.access_token;
+                        requestModel.formDigestValue = sharePointToken.formDigestValue;
+                        await createRequests.POSTAsync(requestModel);
+                        return request.CreateResponse(HttpStatusCode.OK, "Successfully Deleted File " + folder.fileName);
+                    }
+                    else
+                        throw new Exception();
+                }
+                else
+                    throw new Exception();
+            }
+            catch (Exception)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+        }
+
         /// <summary>
         /// Description : Gets the Form Digest Value using a Valid Token supplied along 
         ///               with the Request which is retrieved by calling the GetToken Method

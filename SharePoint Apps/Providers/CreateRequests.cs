@@ -169,6 +169,38 @@ namespace SharePoint_Apps.Providers
             }
         }
 
+        /// <summary>        
+        /// Description : This method creates the URL for the POST Request that will hit the
+        ///               SharePoint API inorder to Delete a File from a particular Folder with the Supplied Name in the Shared Documents Folder
+        ///               along with the needed details.
+        /// </summary>
+        /// <returns> The URL for the POST Request with the needed values</returns>
+        public RequestModel DeleteFileSharePointValues(FolderModel folders)
+        {
+            try
+            {
+                var parentURL = ConfigurationManager.AppSettings["Parent SharePoint URL"].ToString();
+                var subURL_1 = ConfigurationManager.AppSettings["Sub Part 1 URL"].ToString();
+                var subURL_2 = ConfigurationManager.AppSettings["Sub Part 2 URL"].ToString();
+                var subfolder = ConfigurationManager.AppSettings["Folder Directory URL"].ToString();
+                var fileURL = ConfigurationManager.AppSettings["Get File Relative URL"].ToString();
+
+                string fileRelativeURL = string.Format(fileURL, subURL_1 + subfolder + folders.FolderName + "/" + folders.fileName);
+                string fileDeleteURL = parentURL + subURL_1 + subURL_2 + fileRelativeURL;
+
+                RequestModel requestModel = new RequestModel
+                {
+                    URL = fileDeleteURL,
+                    type = 7
+                };
+
+                return requestModel;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
         /// <summary>
         /// Description : This method creates the URL for the GET Request that will hit the
         ///               SharePoint API inorder to List a Folder (name supplied) Contents in the Shared Documents Folder.        
@@ -283,7 +315,7 @@ namespace SharePoint_Apps.Providers
                     var result = await client.PostAsync(credentials.URL, content);
                     return result;
                 }
-                else
+                else if (credentials.type == 5)        //Type 5 indicates that the POST Request will be for Uploading a File to a Particular Folder on Shared Documents
                 {
                     //This Section Creates a POST Request for Uploading a File to a Particular Folder
                     MultipartFormDataContent form = new MultipartFormDataContent();
@@ -291,6 +323,17 @@ namespace SharePoint_Apps.Providers
                     client.DefaultRequestHeaders.Add("X-RequestDigest", credentials.formDigestValue);
                     form.Add(credentials.httpPostedFile);
                     var result = await client.PostAsync(credentials.URL, form);
+                    return result;
+                }
+
+                else                               //Type 7 indicates that the POST Request will be for Deleting a File from a Particular Folder on Shared Documents
+                {
+                    //This Section Creates a POST Request for Deleting a File from a Particular Folder
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    client.DefaultRequestHeaders.Add("X-RequestDigest", credentials.formDigestValue);
+                    client.DefaultRequestHeaders.Add("X-HTTP-Method", "DELETE");
+                    content = null;
+                    var result = await client.PostAsync(credentials.URL, content);
                     return result;
                 }
             }
