@@ -139,6 +139,8 @@ namespace SharePoint_Apps.Controllers
                     if (requestModel != null)
                     {
                         folder.fileCount = folder.folderCount = 0;
+                        folder.files = new List<string>();
+                        folder.SubFolders = new List<string>();
                         requestModel.token = sharePointToken.access_token;
                         string responses = (string) await createRequests.GETAsync(requestModel);
                         string[] response = responses.Split('@');
@@ -150,7 +152,7 @@ namespace SharePoint_Apps.Controllers
                                 folder.fileCount++;
                             if (fileResult[i].Contains("ServerRelativeUrl"))
                             {
-                                ++i;
+                                i += 2;
                                 string[] temp = fileResult[i].Split('/');
                                 folder.files.Add(temp[temp.Length - 1]);
                             }
@@ -161,7 +163,7 @@ namespace SharePoint_Apps.Controllers
                                 folder.folderCount++;
                             if (folderResult[i].Contains("ServerRelativeUrl"))
                             {
-                                ++i;
+                                i += 2;
                                 string[] temp = folderResult[i].Split('/');
                                 folder.SubFolders.Add(temp[temp.Length - 1]);
                             }
@@ -178,7 +180,7 @@ namespace SharePoint_Apps.Controllers
                 else
                     throw new Exception();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }

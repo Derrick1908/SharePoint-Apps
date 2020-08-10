@@ -158,8 +158,8 @@ namespace SharePoint_Apps.Providers
             try
             {
                 RequestModel requestModel = DeleteSharePointFolderValues(folders);
-                requestModel.URL += "/Files";
                 requestModel.URL2 = requestModel.URL + "/Folders";
+                requestModel.URL += "/Files";                
                 requestModel.type = 6;
                 return requestModel;
             }
@@ -277,8 +277,8 @@ namespace SharePoint_Apps.Providers
                     client.DefaultRequestHeaders.Accept.Add(acceptHeader);
                     var result = await client.GetAsync(credentials.URL);    //Files Result
                     
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
-                    client.DefaultRequestHeaders.Accept.Add(acceptHeader);
+                    //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    //client.DefaultRequestHeaders.Accept.Add(acceptHeader);
                     var result2 = await client.GetAsync(credentials.URL2);  //Folders Result
                     
                     string resultContent = await result.Content.ReadAsStringAsync();
