@@ -21,7 +21,5 @@ namespace SharePoint_Apps.Models
         public string access_token { get; set; }
         public int formDigestTimeout { get; set; }
         public string formDigestValue { get; set; }
-
-
     }
 }
