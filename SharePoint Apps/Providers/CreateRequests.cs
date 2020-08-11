@@ -157,11 +157,27 @@ namespace SharePoint_Apps.Providers
         {
             try
             {
-               RequestModel requestModel = DeleteSharePointFolderValues(folders);
-               var fileURL = ConfigurationManager.AppSettings["File Relative URL"].ToString();
-               requestModel.URL += string.Format(fileURL,folders.fileName);   
-               requestModel.type = 5;
-               return requestModel;
+                var parentURL = ConfigurationManager.AppSettings["Parent SharePoint URL"].ToString();
+                var subURL_1 = ConfigurationManager.AppSettings["Sub Part 1 URL"].ToString();
+                var subURL_2 = ConfigurationManager.AppSettings["Sub Part 2 URL"].ToString();
+                var subfolder = ConfigurationManager.AppSettings["Folder Directory URL"].ToString();
+                var folderURL = ConfigurationManager.AppSettings["Folder Relative URL"].ToString();
+
+                string fileTempURL = subURL_1 + subfolder + folders.FolderName + "/";
+                if (folders.path != null)   //Incase the Document is within a particular Folder under that particular Client/Vendor etc.
+                    fileTempURL += folders.path; //Those Sub Folders will also be added to the Path.
+
+                var fileURL = ConfigurationManager.AppSettings["File Relative URL"].ToString();
+                string folderRelativeURL = string.Format(folderURL, fileTempURL);
+                string fileuploadURL = parentURL + subURL_1 + subURL_2 + folderRelativeURL;
+                fileuploadURL += string.Format(fileURL, folders.fileName);
+                RequestModel requestModel = new RequestModel
+                {
+                    URL = fileuploadURL,
+                    type = 5
+                };
+
+                return requestModel;
             }
             catch (Exception)
             {
@@ -185,7 +201,12 @@ namespace SharePoint_Apps.Providers
                 var subfolder = ConfigurationManager.AppSettings["Folder Directory URL"].ToString();
                 var fileURL = ConfigurationManager.AppSettings["Get File Relative URL"].ToString();
 
-                string fileRelativeURL = string.Format(fileURL, subURL_1 + subfolder + folders.FolderName + "/" + folders.fileName);
+                string fileTempURL = subURL_1 + subfolder + folders.FolderName + "/";
+                if (folders.SubFolders != null)   //Incase the Document is within a particular Folder under that particular Client/Vendor etc.
+                    for (int i = 0; i < folders.SubFolders.Count; i++)
+                        fileTempURL += "/" + folders.SubFolders[i]; //Those Sub Folders will also be added to the Path.
+                fileTempURL += "/" + folders.fileName;
+                string fileRelativeURL = string.Format(fileURL, fileTempURL);
                 string fileDeleteURL = parentURL + subURL_1 + subURL_2 + fileRelativeURL;
 
                 RequestModel requestModel = new RequestModel

@@ -207,7 +207,7 @@ namespace SharePoint_Apps.Controllers
             // Read the file into the byte array.
             MyStream.Read(input, 0, FileLen);
 
-            
+            string path = httpRequest.Form["Path"];
 
             var configuration = new HttpConfiguration();
             var request = new HttpRequestMessage();
@@ -220,7 +220,8 @@ namespace SharePoint_Apps.Controllers
                     FolderModel folder = new FolderModel()
                     {
                         FolderName = folderName,
-                        fileName = httpRequest.Files[0].FileName
+                        fileName = httpRequest.Files[0].FileName,
+                        path = path ?? null
                     };
                     RequestModel requestModel = createRequests.UploadFileSharePointValues(folder);
                     if (requestModel != null)

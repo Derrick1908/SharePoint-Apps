@@ -20,5 +20,6 @@ namespace SharePoint_Apps.Models
         public int fileCount { get; set; }
         public int folderCount { get; set; }
         public int type { get; set; }     //Whether its a Client or Vendor or User
+        public string path { get; set; }   //Used to Store Path of the File to be Uploaded. Only used during Upload Operation.
     }
 }
