@@ -158,44 +158,92 @@ namespace SharePoint_Apps.Controllers
             request.SetConfiguration(configuration);
             try
             {
+                if (FolderExits(folder) != null)       //Checks if the Folder exists before retrieving contents
+                {
+                    SharePointResponse sharePointToken = await GetSharepointToken();
+                    if (sharePointToken != null)
+                    {
+                        RequestModel requestModel = createRequests.GetFolderContentSharePointValues(folder);
+                        if (requestModel != null)
+                        {
+                            folder.fileCount = folder.folderCount = 0;
+                            folder.files = new List<string>();
+                            folder.SubFolders = new List<string>();
+                            requestModel.token = sharePointToken.access_token;
+                            string responses = (string)await createRequests.GETAsync(requestModel);
+                            string[] response = responses.Split('@');
+                            string[] fileResult = response[0].Split('\"');
+                            string[] folderResult = response[1].Split('\"');
+                            for (var i = 0; i < fileResult.Length; i++)
+                            {
+                                if (fileResult[i].Contains("metadata"))
+                                    folder.fileCount++;
+                                if (fileResult[i].Contains("ServerRelativeUrl"))
+                                {
+                                    i += 2;
+                                    string[] temp = fileResult[i].Split('/');
+                                    folder.files.Add(temp[temp.Length - 1]);
+                                }
+                            }
+                            for (var i = 0; i < folderResult.Length; i++)
+                            {
+                                if (folderResult[i].Contains("metadata"))
+                                    folder.folderCount++;
+                                if (folderResult[i].Contains("ServerRelativeUrl"))
+                                {
+                                    i += 2;
+                                    string[] temp = folderResult[i].Split('/');
+                                    folder.SubFolders.Add(temp[temp.Length - 1]);
+                                }
+                            }
+
+                            return folder;
+                        }
+                        else
+                            throw new Exception();
+                    }
+                    else
+                        throw new Exception();
+                }
+                else
+                    throw new Exception();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Description : GET Request to Check if a Particular Folder in SharePoint Shared Documents 
+        ///               with the given folder name exists or not. It also sends the request along with token that it
+        ///               retrieves by internally calling the Get Token Method.
+        /// </summary>
+        /// <returns>The Folder Contents</returns>
+        [System.Web.Http.Route("api/folderexists")]
+        [HttpGet]
+        public async Task<object> FolderExits(FolderModel folder)
+        {
+            var configuration = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.SetConfiguration(configuration);
+            try
+            {
                 SharePointResponse sharePointToken = await GetSharepointToken();
                 if (sharePointToken != null)
                 {
-                    RequestModel requestModel = createRequests.GetFolderContentSharePointValues(folder);
+                    RequestModel requestModel = createRequests.FolderExistsSharePointValues(folder);
                     if (requestModel != null)
                     {
-                        folder.fileCount = folder.folderCount = 0;
-                        folder.files = new List<string>();
-                        folder.SubFolders = new List<string>();
                         requestModel.token = sharePointToken.access_token;
                         string responses = (string)await createRequests.GETAsync(requestModel);
-                        string[] response = responses.Split('@');
-                        string[] fileResult = response[0].Split('\"');
-                        string[] folderResult = response[1].Split('\"');
-                        for (var i = 0; i < fileResult.Length; i++)
+                        string[] response = responses.Split('\"');
+                        for (var i = 0; i < response.Length; i++)
                         {
-                            if (fileResult[i].Contains("metadata"))
-                                folder.fileCount++;
-                            if (fileResult[i].Contains("ServerRelativeUrl"))
-                            {
-                                i += 2;
-                                string[] temp = fileResult[i].Split('/');
-                                folder.files.Add(temp[temp.Length - 1]);
-                            }
+                            if (response[i].Contains("ListItemAllFields"))
+                                return null;
                         }
-                        for (var i = 0; i < folderResult.Length; i++)
-                        {
-                            if (folderResult[i].Contains("metadata"))
-                                folder.folderCount++;
-                            if (folderResult[i].Contains("ServerRelativeUrl"))
-                            {
-                                i += 2;
-                                string[] temp = folderResult[i].Split('/');
-                                folder.SubFolders.Add(temp[temp.Length - 1]);
-                            }
-                        }
-
-                        return folder;
+                        return responses;
                     }
                     else
                         throw new Exception();

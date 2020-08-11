@@ -243,6 +243,29 @@ namespace SharePoint_Apps.Providers
             }
         }
 
+        /// <summary>        
+        /// Description : This method creates the URL for the GET Request that will hit the
+        ///               SharePoint API inorder to Check if the Folder (name supplied) exists in the Shared Documents Folder.
+        ///               Note that it Calls DeleteFolder Method to build the URL and due to this it can also
+        ///               receive sub folders names as parameters in the call.
+        /// </summary>
+        /// <returns> The URL for the GET Request with the needed values</returns>
+        public RequestModel FolderExistsSharePointValues(FolderModel folders)
+        {
+            try
+            {
+                RequestModel requestModel = DeleteSharePointFolderValues(folders);
+                requestModel.URL += "/ListItemAllFields";
+                requestModel.type = 8;
+                return requestModel;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+
         /// <summary>
         /// Description : This method creates the URL for the POST Request that will hit the
         ///               SharePoint API inorder to get the Form Digest Value.
@@ -370,7 +393,7 @@ namespace SharePoint_Apps.Providers
         {
             using (HttpClient client = new HttpClient())
             {
-                if (credentials.type == 6)
+                if (credentials.type == 6)          //Type 6 indicates that the GET Request will be for Retrieving the contents of a Particular Folder exist on Shared Documents
                 {
                     //This Section Creates a GET Request for Retrieving the Contents of a Particular Folder
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
@@ -383,8 +406,12 @@ namespace SharePoint_Apps.Providers
                     string resultContent2 = await result2.Content.ReadAsStringAsync();
                     return resultContent + "@" + resultContent2;  //Acts as a separator between both the Results
                 }
-                else
+                else   //Type 8 indicates that the GET Request will be for Checking if a a Particular Folder exist on Shared Documents or not
                 {
+                    //This Section Creates a GET Request for checking if a Particular Folder exists on Sharepoint Shared Documents or not.
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    MediaTypeWithQualityHeaderValue acceptHeader = MediaTypeWithQualityHeaderValue.Parse("application/json;odata=verbose");
+                    client.DefaultRequestHeaders.Accept.Add(acceptHeader);
                     var result = await client.GetAsync(credentials.URL);
                     string resultContent = await result.Content.ReadAsStringAsync();
                     return resultContent;
