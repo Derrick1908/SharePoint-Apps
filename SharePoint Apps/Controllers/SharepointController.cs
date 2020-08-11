@@ -174,9 +174,9 @@ namespace SharePoint_Apps.Controllers
                         string[] folderResult = response[1].Split('\"');
                         for (var i = 0; i < fileResult.Length; i++)
                         {
-                            if (fileResult[i].Contains(NameConstants.SHAREPOINT_METADATA))
+                            if (fileResult[i].Contains("metadata"))
                                 folder.fileCount++;
-                            if (fileResult[i].Contains(NameConstants.SHAREPOINT_SERVER_URL))
+                            if (fileResult[i].Contains("ServerRelativeUrl"))
                             {
                                 i += 2;
                                 string[] temp = fileResult[i].Split('/');
@@ -185,9 +185,9 @@ namespace SharePoint_Apps.Controllers
                         }
                         for (var i = 0; i < folderResult.Length; i++)
                         {
-                            if (folderResult[i].Contains(NameConstants.SHAREPOINT_METADATA))
+                            if (folderResult[i].Contains("metadata"))
                                 folder.folderCount++;
-                            if (folderResult[i].Contains(NameConstants.SHAREPOINT_SERVER_URL))
+                            if (folderResult[i].Contains("ServerRelativeUrl"))
                             {
                                 i += 2;
                                 string[] temp = folderResult[i].Split('/');
