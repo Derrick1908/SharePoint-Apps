@@ -131,6 +131,33 @@ namespace SharePoint_Apps.Controllers
             request.SetConfiguration(configuration);
             try
             {
+                folder = (FolderModel)await GetFolderContents(folder);
+                if (folder.fileCount < 0 && folder.folderCount < 0)
+                    return request.CreateResponse(HttpStatusCode.OK, "Folder " + folder.FolderName + " is Empty");
+                else
+                    return request.CreateResponse(HttpStatusCode.OK, "Folder " + folder.FolderName + " is not Empty");
+            }
+            catch (Exception)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+        }
+
+        /// <summary>        
+        /// Description : POST Request to Retrieve the Contents of a Particular Folder in SharePoint API
+        ///               with the given folder name. It also sends the request along with token that it
+        ///               retrieves by internally calling the Get Token Method.
+        /// </summary>
+        /// <returns>The Folder Contents</returns>
+        [System.Web.Http.Route("api/foldercontents")]
+        [HttpGet]
+        public async Task<object> GetFolderContents(FolderModel folder)
+        {
+            var configuration = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.SetConfiguration(configuration);
+            try
+            {
                 SharePointResponse sharePointToken = await GetSharepointToken();
                 if (sharePointToken != null)
                 {
@@ -141,15 +168,15 @@ namespace SharePoint_Apps.Controllers
                         folder.files = new List<string>();
                         folder.SubFolders = new List<string>();
                         requestModel.token = sharePointToken.access_token;
-                        string responses = (string) await createRequests.GETAsync(requestModel);
+                        string responses = (string)await createRequests.GETAsync(requestModel);
                         string[] response = responses.Split('@');
                         string[] fileResult = response[0].Split('\"');
                         string[] folderResult = response[1].Split('\"');
                         for (var i = 0; i < fileResult.Length; i++)
                         {
-                            if (fileResult[i].Contains("metadata"))
+                            if (fileResult[i].Contains(NameConstants.SHAREPOINT_METADATA))
                                 folder.fileCount++;
-                            if (fileResult[i].Contains("ServerRelativeUrl"))
+                            if (fileResult[i].Contains(NameConstants.SHAREPOINT_SERVER_URL))
                             {
                                 i += 2;
                                 string[] temp = fileResult[i].Split('/');
@@ -158,9 +185,9 @@ namespace SharePoint_Apps.Controllers
                         }
                         for (var i = 0; i < folderResult.Length; i++)
                         {
-                            if (folderResult[i].Contains("metadata"))
+                            if (folderResult[i].Contains(NameConstants.SHAREPOINT_METADATA))
                                 folder.folderCount++;
-                            if (folderResult[i].Contains("ServerRelativeUrl"))
+                            if (folderResult[i].Contains(NameConstants.SHAREPOINT_SERVER_URL))
                             {
                                 i += 2;
                                 string[] temp = folderResult[i].Split('/');
@@ -168,10 +195,7 @@ namespace SharePoint_Apps.Controllers
                             }
                         }
 
-                        if(folder.fileCount < 0 && folder.folderCount < 0)
-                            return request.CreateResponse(HttpStatusCode.OK, "Folder " + folder.FolderName + " is Empty");
-                        else
-                            return request.CreateResponse(HttpStatusCode.OK, "Folder " + folder.FolderName + " is not Empty");
+                        return folder;
                     }
                     else
                         throw new Exception();
@@ -181,7 +205,7 @@ namespace SharePoint_Apps.Controllers
             }
             catch (Exception)
             {
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+                return null;
             }
         }
 
