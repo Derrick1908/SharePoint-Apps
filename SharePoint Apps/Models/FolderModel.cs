@@ -16,7 +16,7 @@ namespace SharePoint_Apps.Models
         public string FolderName { get; set; }
         public List<string> SubFolders { get; set; }
         public string fileName { get; set; }
-        public List<string> files { get; set; }
+        public List<string> files { get; set; }      //Used to Store Filenames when uploading Mutiple Files. Also Used to Store the File names under a particular Folder.
         public int fileCount { get; set; }
         public int folderCount { get; set; }
         public int type { get; set; }     //Whether its a Client or Vendor or User

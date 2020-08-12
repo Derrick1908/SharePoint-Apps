@@ -170,10 +170,12 @@ namespace SharePoint_Apps.Providers
                 var fileURL = ConfigurationManager.AppSettings["File Relative URL"].ToString();
                 string folderRelativeURL = string.Format(folderURL, fileTempURL);
                 string fileuploadURL = parentURL + subURL_1 + subURL_2 + folderRelativeURL;
-                fileuploadURL += string.Format(fileURL, folders.fileName);
+                List<string> fileuploadURLs = new List<string>();
+                for (int i = 0; i < folders.files.Count; i++)
+                    fileuploadURLs.Add(fileuploadURL + string.Format(fileURL, folders.files[i]));
                 RequestModel requestModel = new RequestModel
                 {
-                    URL = fileuploadURL,
+                    URLs = fileuploadURLs,
                     type = 5
                 };
 
@@ -362,14 +364,23 @@ namespace SharePoint_Apps.Providers
                 else if (credentials.type == 5)        //Type 5 indicates that the POST Request will be for Uploading a File to a Particular Folder on Shared Documents
                 {
                     //This Section Creates a POST Request for Uploading a File to a Particular Folder
-                    MultipartFormDataContent form = new MultipartFormDataContent();
+                    MultipartFormDataContent form;
+                    HttpResponseMessage result = new HttpResponseMessage();
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
                     client.DefaultRequestHeaders.Add("X-RequestDigest", credentials.formDigestValue);
-                    form.Add(credentials.httpPostedFile);
-                    var result = await client.PostAsync(credentials.URL, form);
+                    if (credentials.httpPostedFile != null)
+                    {
+                        for (int i = 0; i < credentials.httpPostedFile.Count; i++)
+                        {
+                            form = new MultipartFormDataContent
+                            {
+                                credentials.httpPostedFile[i]
+                            };
+                            result = await client.PostAsync(credentials.URLs[i], form);
+                        }
+                    }
                     return result;
                 }
-
                 else                               //Type 7 indicates that the POST Request will be for Deleting a File from a Particular Folder on Shared Documents
                 {
                     //This Section Creates a POST Request for Deleting a File from a Particular Folder

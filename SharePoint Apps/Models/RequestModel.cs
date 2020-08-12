@@ -20,7 +20,9 @@ namespace SharePoint_Apps.Models
         public string token { get; set; }
         public string formDigestValue { get; set; }
         public int type { get; set; }
-        public ByteArrayContent httpPostedFile { get; set; }
+        public List<ByteArrayContent> httpPostedFile { get; set; }
         public string URL2 { get; set; }     //Used only when retrieving Folder Contents. Otherwise rarely used.
+        public List<string> fileNames { get; set; }  //Used to Store Filenames when uploading Mutiple Files. Used only during Upload Operation else rarely used.
+        public List<string> URLs { get; set; }  //Used to Store the File URLs that are needed during the Upload Operation otherwise rarely used.
     }
 }

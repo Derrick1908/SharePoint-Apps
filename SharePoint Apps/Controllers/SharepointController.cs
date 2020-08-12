@@ -267,18 +267,29 @@ namespace SharePoint_Apps.Controllers
         public async Task<object> UploadFile()
         {
             var httpRequest = HttpContext.Current.Request;
-            HttpPostedFile FileUpload = httpRequest.Files[0];      //Retrieves the File that is sent with the HTTP Request
+            HttpFileCollection hfc = httpRequest.Files;
+            RequestModel requestModel_2 = new RequestModel
+            {
+                httpPostedFile = new List<ByteArrayContent>()
+            };
+            if (httpRequest.Files.Count > 0)
+            {
+                for (int i = 0; i < hfc.Count; i++)
+                {
+                    HttpPostedFile FileUpload = hfc[i];      //Retrieves the File that is sent with the HTTP Request
+
+                    int FileLen = FileUpload.ContentLength;   //Length of the File sent to be Uploaded
+                    byte[] input = new byte[FileLen];         //Initiliaze a Byte Array
+
+                    // Initialize the stream.
+                    Stream MyStream = FileUpload.InputStream;
+
+                    // Read the file into the byte array.
+                    MyStream.Read(input, 0, FileLen);
+                    requestModel_2.httpPostedFile.Add(new ByteArrayContent(input));
+                }
+            }
             string folderName = httpRequest.Form["Folder_Name"];   // This is used to retrieve from the Request the Destination Folder Name
-            
-            int FileLen = FileUpload.ContentLength;   //Length of the File sent to be Uploaded
-            byte[] input = new byte[FileLen];         //Initiliaze a Byte Array
-
-            // Initialize the stream.
-            Stream MyStream = FileUpload.InputStream;
-
-            // Read the file into the byte array.
-            MyStream.Read(input, 0, FileLen);
-
             string path = httpRequest.Form["Path"];
 
             var configuration = new HttpConfiguration();
@@ -292,17 +303,23 @@ namespace SharePoint_Apps.Controllers
                     FolderModel folder = new FolderModel()
                     {
                         FolderName = folderName,
-                        fileName = httpRequest.Files[0].FileName,
                         path = path ?? null
                     };
+                    folder.files = new List<string>();
+                    for (int i = 0; i < hfc.Count; i++)
+                        folder.files.Add(hfc[i].FileName);
                     RequestModel requestModel = createRequests.UploadFileSharePointValues(folder);
                     if (requestModel != null)
                     {
                         requestModel.token = sharePointToken.access_token;
                         requestModel.formDigestValue = sharePointToken.formDigestValue;
-                        requestModel.httpPostedFile = new ByteArrayContent(input);
+                        requestModel.httpPostedFile = requestModel_2.httpPostedFile;
+                        requestModel.fileNames = new List<string>();
+                        for (int i = 0; i < hfc.Count; i++)
+                            requestModel.fileNames.Add(hfc[i].FileName);
                         await createRequests.POSTAsync(requestModel);
-                        return request.CreateResponse(HttpStatusCode.OK, "Successfully Uploaded File " + folder.fileName);
+                        string combindedFiles = string.Join(",", requestModel.fileNames);
+                        return request.CreateResponse(HttpStatusCode.OK, "Successfully Uploaded File(s) " + combindedFiles);
                     }
                     else
                         throw new Exception();
