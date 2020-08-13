@@ -130,7 +130,12 @@ namespace SharePoint_Apps.Providers
                 var subfolder = ConfigurationManager.AppSettings["Folder Directory URL"].ToString();
                 var folderURL = ConfigurationManager.AppSettings["Folder Relative URL"].ToString();
 
-                string folderRelativeURL = string.Format(folderURL,subURL_1 + subfolder + folders.FolderName);
+                string folderTempURL = subURL_1 + subfolder + folders.FolderName + "/";
+                if (folders.SubFolders != null)   //Incase the Document is within a particular Folder under that particular Client/Vendor etc.
+                    for (int i = 0; i < folders.SubFolders.Count; i++)
+                        folderTempURL += "/" + folders.SubFolders[i]; //Those Sub Folders will also be added to the Path.
+
+                string folderRelativeURL = string.Format(folderURL, folderTempURL);
                 string folderDeleteURL = parentURL + subURL_1 + subURL_2 + folderRelativeURL;
 
                 RequestModel requestModel = new RequestModel
@@ -237,6 +242,30 @@ namespace SharePoint_Apps.Providers
                 requestModel.URL2 = requestModel.URL + "/Folders";
                 requestModel.URL += "/Files";                
                 requestModel.type = 6;
+                return requestModel;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Description : This method creates the URL for the GET Request that will hit the
+        ///               SharePoint API inorder to Download a File from a Folder/Folder Path (name supplied) in the Shared Documents Folder.
+        ///               Note that it Calls DeleteFolder Method to build the URL and due to this it can also
+        ///               receive sub folders names as parameters in the call.
+        /// </summary>
+        /// <returns> The URL for the GET Request with the needed values</returns>
+        public RequestModel DownloadFileContentSharePointValues(FolderModel folders)
+        {
+            try
+            {
+                RequestModel requestModel = DeleteSharePointFolderValues(folders);
+                var filetempURL = ConfigurationManager.AppSettings["File Download URL"].ToString();
+                string fileDownloadURL = string.Format(filetempURL, folders.fileName);
+                requestModel.URL += fileDownloadURL;
+                requestModel.type = 9;
                 return requestModel;
             }
             catch (Exception)
@@ -417,7 +446,7 @@ namespace SharePoint_Apps.Providers
                     string resultContent2 = await result2.Content.ReadAsStringAsync();
                     return resultContent + "@" + resultContent2;  //Acts as a separator between both the Results
                 }
-                else   //Type 8 indicates that the GET Request will be for Checking if a a Particular Folder exist on Shared Documents or not
+                else if (credentials.type == 8)  //Type 8 indicates that the GET Request will be for Checking if a a Particular Folder exist on Shared Documents or not
                 {
                     //This Section Creates a GET Request for checking if a Particular Folder exists on Sharepoint Shared Documents or not.
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
@@ -426,6 +455,18 @@ namespace SharePoint_Apps.Providers
                     var result = await client.GetAsync(credentials.URL);
                     string resultContent = await result.Content.ReadAsStringAsync();
                     return resultContent;
+                }
+                else         //Type 9 indicates that the GET Request will be for downloading a Particular File on Shared Documents under a Particular Directory
+                {
+                    //This Section Creates a GET Request for Downloading a Particular File from a Folder in Sharepoint Shared Documents
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credentials.token);
+                    MediaTypeWithQualityHeaderValue acceptHeader = MediaTypeWithQualityHeaderValue.Parse("application/json;odata=verbose");
+                    client.DefaultRequestHeaders.Accept.Add(acceptHeader);
+                    var result = await client.GetAsync(credentials.URL, HttpCompletionOption.ResponseHeadersRead);
+                    byte[] resultContent = await result.Content.ReadAsByteArrayAsync();
+                    File.WriteAllBytes("C:\\Tested\\" + credentials.fileNames[0], resultContent);
+                    return resultContent;
+
                 }
             }
         }

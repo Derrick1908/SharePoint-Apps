@@ -143,6 +143,47 @@ namespace SharePoint_Apps.Controllers
             }
         }
 
+        /// <summary>
+        /// Description : GET Request to download a Particular File in SharePoint API
+        ///               under the given folder name/folder path along with token that it
+        ///               retrieves by internally calling the Get Token Method.
+        /// </summary>
+        /// <returns>Whether the Folder is Empty or not.</returns>
+        [System.Web.Http.Route("api/DownloadFile")]
+        [HttpGet]
+        public async Task<object> DownloadFile(FolderModel folder)
+        {
+            var configuration = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.SetConfiguration(configuration);
+            try
+            {
+                SharePointResponse sharePointToken = await GetSharepointToken();
+                if (sharePointToken != null)
+                {
+                    RequestModel requestModel = createRequests.DownloadFileContentSharePointValues(folder);
+                    if (requestModel != null)
+                    {
+                        requestModel.token = sharePointToken.access_token;
+                        requestModel.fileNames = new List<string>
+                        {
+                            folder.fileName
+                        };
+                        await createRequests.GETAsync(requestModel);
+                        return request.CreateResponse(HttpStatusCode.OK, "Successfully Downloaded File " + folder.fileName);
+                    }
+                    else
+                        throw new Exception();
+                }
+                else
+                    throw new Exception();
+            }
+            catch (Exception)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+        }
+
         /// <summary>        
         /// Description : POST Request to Retrieve the Contents of a Particular Folder in SharePoint API
         ///               with the given folder name. It also sends the request along with token that it
