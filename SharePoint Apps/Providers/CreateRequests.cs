@@ -464,7 +464,10 @@ namespace SharePoint_Apps.Providers
                     client.DefaultRequestHeaders.Accept.Add(acceptHeader);
                     var result = await client.GetAsync(credentials.URL, HttpCompletionOption.ResponseHeadersRead);
                     byte[] resultContent = await result.Content.ReadAsByteArrayAsync();
-                    File.WriteAllBytes("C:\\Tested\\" + credentials.fileNames[0], resultContent);
+
+                    //Can also download the file Locally to a Specific Fixed Directory. Currently without this option it asks the User where to store the file.
+                    //File.WriteAllBytes("C:\\Tested\\" + credentials.fileNames[0], resultContent);
+                    //File.WriteAllBytes(HttpContext.Current.Server.MapPath("~/" + credentials.fileNames[0]), resultContent);
                     return resultContent;
 
                 }

@@ -146,7 +146,8 @@ namespace SharePoint_Apps.Controllers
         /// <summary>
         /// Description : GET Request to download a Particular File in SharePoint API
         ///               under the given folder name/folder path along with token that it
-        ///               retrieves by internally calling the Get Token Method.
+        ///               retrieves by internally calling the Get Token Method. The File can then be saved in the
+        ///               Desired location.
         /// </summary>
         /// <returns>Whether the Folder is Empty or not.</returns>
         [System.Web.Http.Route("api/DownloadFile")]
@@ -154,8 +155,7 @@ namespace SharePoint_Apps.Controllers
         public async Task<object> DownloadFile(FolderModel folder)
         {
             var configuration = new HttpConfiguration();
-            var request = new HttpRequestMessage();
-            request.SetConfiguration(configuration);
+            var request = new HttpResponseMessage();
             try
             {
                 SharePointResponse sharePointToken = await GetSharepointToken();
@@ -169,8 +169,19 @@ namespace SharePoint_Apps.Controllers
                         {
                             folder.fileName
                         };
-                        await createRequests.GETAsync(requestModel);
-                        return request.CreateResponse(HttpStatusCode.OK, "Successfully Downloaded File " + folder.fileName);
+
+                        var dataBytes = await createRequests.GETAsync(requestModel);
+
+                        //adding bytes to memory stream   
+                        var dataStream = new MemoryStream((byte[])dataBytes);
+
+                        request = Request.CreateResponse(HttpStatusCode.OK, "Successfully Downloaded File " + folder.fileName);
+                        request.Content = new StreamContent(dataStream);
+                        request.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment");
+                        request.Content.Headers.ContentDisposition.FileName = folder.fileName;
+                        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+
+                        return request;
                     }
                     else
                         throw new Exception();
